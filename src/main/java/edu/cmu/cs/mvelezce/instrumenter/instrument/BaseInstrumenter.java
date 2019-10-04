@@ -1,6 +1,7 @@
 package edu.cmu.cs.mvelezce.instrumenter.instrument;
 
 import edu.cmu.cs.mvelezce.utils.Options;
+import edu.cmu.cs.mvelezce.utils.Packager;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -29,6 +30,11 @@ public abstract class BaseInstrumenter implements Instrumenter {
     if (Options.checkIfSave()) {
       this.instrument();
     }
+  }
+
+  @Override
+  public void compile() throws IOException, InterruptedException {
+    Packager.packageJar(this.getSrcDir());
   }
 
   public String getProgramName() {
