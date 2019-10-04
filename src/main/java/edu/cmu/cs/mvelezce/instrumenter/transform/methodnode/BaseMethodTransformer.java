@@ -16,24 +16,24 @@ import java.util.Set;
 
 public abstract class BaseMethodTransformer implements MethodTransformer {
 
+  private final String programName;
   private final ClassTransformer classTransformer;
   private final boolean debug;
 
-  public BaseMethodTransformer(ClassTransformer classTransformer, boolean debug) {
+  public BaseMethodTransformer(
+      String programName, ClassTransformer classTransformer, boolean debug) {
+    this.programName = programName;
     this.classTransformer = classTransformer;
     this.debug = debug;
   }
 
-  public BaseMethodTransformer(ClassTransformer classTransformer) {
-    this(classTransformer, false);
-  }
-
-  protected abstract String getProgramName();
-
   protected abstract String getDebugDir();
 
-  // TODO override transform method to call the updateMaxs method
+  public String getProgramName() {
+    return programName;
+  }
 
+  // TODO override transform method to call the updateMaxs method
   @Override
   public void transformMethods() throws IOException {
     Set<ClassNode> classNodes = this.classTransformer.readClasses();
