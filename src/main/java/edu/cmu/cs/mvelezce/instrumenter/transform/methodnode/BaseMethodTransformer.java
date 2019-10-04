@@ -18,12 +18,14 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
 
   private final String programName;
   private final ClassTransformer classTransformer;
+  private final String mainClass;
   private final boolean debug;
 
   public BaseMethodTransformer(
-      String programName, ClassTransformer classTransformer, boolean debug) {
+      String programName, ClassTransformer classTransformer, String mainClass, boolean debug) {
     this.programName = programName;
     this.classTransformer = classTransformer;
+    this.mainClass = mainClass.replaceAll("\\.", "/");
     this.debug = debug;
   }
 
@@ -31,6 +33,10 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
 
   public String getProgramName() {
     return programName;
+  }
+
+  public String getMainClass() {
+    return mainClass;
   }
 
   // TODO override transform method to call the updateMaxs method
