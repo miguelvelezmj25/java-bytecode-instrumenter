@@ -4,7 +4,6 @@ import edu.cmu.cs.mvelezce.instrumenter.graph.MethodGraph;
 import edu.cmu.cs.mvelezce.instrumenter.graph.block.MethodBlock;
 import edu.cmu.cs.mvelezce.instrumenter.graph.builder.BaseMethodGraphBuilder;
 import edu.cmu.cs.mvelezce.instrumenter.graph.builder.MethodGraphBuilder;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.tree.*;
 import jdk.internal.org.objectweb.asm.tree.analysis.*;
 
@@ -103,8 +102,10 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     Set<CFGNode<BasicValue>> succs = cfgNode.getSuccessors();
 
     if (succs.isEmpty()) {
-      if (insn instanceof JumpInsnNode) {
-        throw new RuntimeException("A jump instruction does not have any successors!");
+      if (insn instanceof JumpInsnNode
+          || insn instanceof TableSwitchInsnNode
+          || insn instanceof LookupSwitchInsnNode) {
+        throw new RuntimeException("A jump or switch instruction does not have any successors!");
       }
 
       return;
@@ -114,17 +115,11 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
       return;
     }
 
-    if (succs.size() > 1) {
-      int curOpcode = insn.getOpcode();
-
-      if (!((curOpcode >= Opcodes.IFEQ & curOpcode <= Opcodes.IF_ACMPNE)
-          || curOpcode == Opcodes.IFNULL
-          || curOpcode == Opcodes.IFNONNULL)) {
-        throw new RuntimeException(
-            "The instruction "
-                + curOpcode
-                + " has multiple successors, but it is not an if comparison");
-      }
+    if (!(insn instanceof JumpInsnNode
+        || insn instanceof TableSwitchInsnNode
+        || insn instanceof LookupSwitchInsnNode)) {
+      throw new RuntimeException(
+          "There is a node with multiple successors, but it is not a jump instruction");
     }
 
     for (CFGNode<BasicValue> succ : succs) {
