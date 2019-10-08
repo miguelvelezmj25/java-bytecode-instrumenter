@@ -37,12 +37,6 @@
             <artifactId>cc-utils</artifactId>
             <version>0.2.0-SNAPSHOT</version>
         </dependency>
-
-        <dependency>
-            <groupId>edu.cmu.cs.mvelezce</groupId>
-            <artifactId>cc-adapters</artifactId>
-            <version>0.2.0-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
     <build>
