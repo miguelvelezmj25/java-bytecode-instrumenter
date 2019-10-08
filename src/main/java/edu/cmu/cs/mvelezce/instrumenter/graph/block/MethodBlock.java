@@ -16,6 +16,7 @@ public class MethodBlock {
   private boolean withReturn = false;
   private boolean catchWithImplicitThrow = false;
   private boolean withLastInstruction = false;
+  private boolean withExplicitThrow = false;
 
   public MethodBlock(AbstractInsnNode insnNode) {
     this(MethodBlock.asID(insnNode));
@@ -104,5 +105,13 @@ public class MethodBlock {
 
   public void setWithLastInstruction(boolean withLastInstruction) {
     this.withLastInstruction = withLastInstruction;
+  }
+
+  public boolean isWithExplicitThrow() {
+    return withExplicitThrow;
+  }
+
+  public void setWithExplicitThrow(boolean withExplicitThrow) {
+    this.withExplicitThrow = withExplicitThrow;
   }
 }

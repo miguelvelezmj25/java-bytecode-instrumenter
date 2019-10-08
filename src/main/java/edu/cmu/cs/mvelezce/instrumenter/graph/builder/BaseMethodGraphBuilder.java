@@ -9,6 +9,7 @@ import jdk.internal.org.objectweb.asm.tree.LabelNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
 import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -39,11 +40,8 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     this.addEdges(graph, methodNode);
     this.connectEntryNode(graph, methodNode);
     this.connectExitNode(graph, methodNode);
-
-    //        System.out.println(graph.toDotString(methodNode.name));
-
+    //    this.processTryCatchBlocks(graph, methodNode);
     this.checkEntryAndExitBlocks(graph);
-    this.processTryCatchBlocks(graph, methodNode);
 
     return graph;
   }
@@ -82,7 +80,9 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     }
 
     for (MethodBlock block : exitPreds) {
-      if (!block.isWithReturn() && !block.isWithLastInstruction() && !graph.isWithWhileTrue()) {
+      if (!block.isWithReturn()
+          && !block.isWithLastInstruction()
+          && !block.isWithExplicitThrow() /*&& !graph.isWithWhileTrue()*/) {
         throw new RuntimeException(
             "A block("
                 + block.getID()
@@ -128,17 +128,65 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
 
   @Override
   public void connectExitNode(MethodGraph graph, MethodNode methodNode) {
-    for (MethodBlock methodBlock : graph.getBlocks()) {
-      for (AbstractInsnNode instruction : methodBlock.getInstructions()) {
-        int opcode = instruction.getOpcode();
+    this.connectBlocksWithReturn(graph);
+    this.connectBlockWithLastInstruction(graph, methodNode);
+    this.connectBlocksWithExplicitThrows(graph, methodNode);
 
-        if (opcode == Opcodes.RET || (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN)) {
-          methodBlock.setWithReturn(true);
-          graph.addEdge(methodBlock, graph.getExitBlock());
-        }
-      }
+    if (graph.getBlockCount() == 3) {
+      throw new InvalidGraphException(
+          "There seems to be a special case for graphs with 3 blocks. Test it");
     }
 
+    //    // TODO do not hard code 3. This can happen if the method has a while(true) loop. Then
+    // there is
+    //    // no return
+    //    if (graph.getBlockCount() == 3) {
+    //      for (MethodBlock block : graph.getBlocks()) {
+    //        if (block.isWithReturn()) {
+    //          return;
+    //        }
+    //      }
+    //
+    //      throw new InvalidGraphException(
+    //          "There seems to be a special case for graphs with 3 blocks. Test it");
+    //      //      Set<MethodBlock> blocks = graph.addBlocks();
+    //      //      blocks.remove(graph.getEntryBlock());
+    //      //      blocks.remove(graph.getExitBlock());
+    //      //
+    //      //      graph.addEdge(blocks.iterator().next(), graph.getExitBlock());
+    //      //      graph.setWithWhileTrue(true);
+    //    }
+  }
+
+  private void connectBlocksWithExplicitThrows(MethodGraph graph, MethodNode methodNode) {
+    Set<MethodBlock> handlers = new HashSet<>();
+
+    for (TryCatchBlockNode tryCatchBlockNode : methodNode.tryCatchBlocks) {
+      AbstractInsnNode handler = tryCatchBlockNode.handler;
+      MethodBlock block = graph.getMethodBlock(handler);
+      handlers.add(block);
+    }
+
+    for (MethodBlock methodBlock : graph.getBlocks()) {
+      if (methodBlock.equals(graph.getEntryBlock()) || methodBlock.equals(graph.getExitBlock())) {
+        continue;
+      }
+
+      if (handlers.contains(methodBlock)) {
+        continue;
+      }
+
+      List<AbstractInsnNode> instructions = methodBlock.getInstructions();
+      AbstractInsnNode lastInstruction = instructions.get(instructions.size() - 1);
+
+      if (lastInstruction.getOpcode() == Opcodes.ATHROW) {
+        methodBlock.setWithExplicitThrow(true);
+        graph.addEdge(methodBlock, graph.getExitBlock());
+      }
+    }
+  }
+
+  private void connectBlockWithLastInstruction(MethodGraph graph, MethodNode methodNode) {
     // The last block of a method might not have a return (e.g., ATHROW)
     AbstractInsnNode lastInstruction = methodNode.instructions.getLast();
 
@@ -150,7 +198,8 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
       }
 
       if (methodBlock.getInstructions().size() <= 1) {
-        continue;
+        throw new RuntimeException("What does the last block have less than two instructions?");
+        //        continue;
       }
 
       methodBlock.setWithLastInstruction(true);
@@ -159,24 +208,19 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
         graph.addEdge(methodBlock, graph.getExitBlock());
       }
     }
+  }
 
-    // TODO do not hard code 3. This can happen if the method has a while(true) loop. Then there is
-    // no return
-    if (graph.getBlockCount() == 3) {
-      for (MethodBlock block : graph.getBlocks()) {
-        if (block.isWithReturn()) {
-          return;
+  private void connectBlocksWithReturn(MethodGraph graph) {
+    for (MethodBlock methodBlock : graph.getBlocks()) {
+      // TODO find the last instruction of a method block
+      for (AbstractInsnNode instruction : methodBlock.getInstructions()) {
+        int opcode = instruction.getOpcode();
+
+        if (opcode == Opcodes.RET || (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN)) {
+          methodBlock.setWithReturn(true);
+          graph.addEdge(methodBlock, graph.getExitBlock());
         }
       }
-
-      throw new InvalidGraphException(
-          "There seems to be a special case for graphs with 3 blocks. Test it");
-      //      Set<MethodBlock> blocks = graph.addBlocks();
-      //      blocks.remove(graph.getEntryBlock());
-      //      blocks.remove(graph.getExitBlock());
-      //
-      //      graph.addEdge(blocks.iterator().next(), graph.getExitBlock());
-      //      graph.setWithWhileTrue(true);
     }
   }
 }
