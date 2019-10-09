@@ -70,6 +70,10 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
     }
   }
 
+  public boolean debug() {
+    return debug;
+  }
+
   private void debugMethods(ClassNode classNode, Set<MethodNode> methodsToInstrument)
       throws IOException {
     // TODO MIGUEL delete existing files
@@ -89,12 +93,15 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
       Printer printer = tracer.getPrinterForMethodSignature(methodNode.name + methodNode.desc);
       PrettyMethodGraphBuilder prettyBuilder = new PrettyMethodGraphBuilder(methodNode, printer);
       PrettyMethodGraph prettyGraph = prettyBuilder.build(methodNode);
-      prettyGraph.saveDotFile(
-          this.getDebugDir(), this.getProgramName(), classNode.name, methodNode.name);
+
+      String doString = prettyGraph.toDotStringVerbose(methodNode.name);
+
+      PrettyMethodGraph.saveDotFile(
+          doString, this.getDebugDir(), this.getProgramName(), classNode.name, methodNode.name, "");
 
       try {
-        prettyGraph.savePdfFile(
-            this.getDebugDir(), this.getProgramName(), classNode.name, methodNode.name);
+        PrettyMethodGraph.savePdfFile(
+            this.getDebugDir(), this.getProgramName(), classNode.name, methodNode.name, "");
       } catch (InterruptedException e) {
         e.printStackTrace();
       }

@@ -15,59 +15,48 @@ public class PrettyMethodGraph extends MethodGraph {
   private static final String DOT_DOT = ".dot";
   private static final String DOT_PDF = ".pdf";
 
-  @Deprecated
-  public void saveDotFile(String programName, String className, String methodName) {
-    throw new UnsupportedOperationException("Deprecated");
-    //    this.saveDotFile(BaseRegionInstrumenter.DIRECTORY, programName, className, methodName);
-  }
-
-  public void saveDotFile(String dir, String programName, String className, String methodName)
+  public static void saveDotFile(
+      String dotString,
+      String dir,
+      String programName,
+      String className,
+      String methodName,
+      String methodNameSuffix)
       throws FileNotFoundException {
-    String dotString = this.toDotStringVerbose(methodName);
-    File file =
-        new File(
-            dir
-                + "/"
-                + programName
-                + "/"
-                + className
-                + "/"
-                + methodName
-                + PrettyMethodGraph.DOT_DOT);
+    String dotFileName =
+        dir
+            + "/"
+            + programName
+            + "/"
+            + className
+            + "/"
+            + methodName
+            + methodNameSuffix
+            + PrettyMethodGraph.DOT_DOT;
+
+    File file = new File(dotFileName);
     file.getParentFile().mkdirs();
 
-    PrintWriter writer =
-        new PrintWriter(
-            dir
-                + "/"
-                + programName
-                + "/"
-                + className
-                + "/"
-                + methodName
-                + PrettyMethodGraph.DOT_DOT);
-
+    PrintWriter writer = new PrintWriter(dotFileName);
     writer.println(dotString);
     writer.flush();
     writer.close();
   }
 
-  @Deprecated
-  public void savePdfFile(String programName, String className, String methodName) {
-    //    this.savePdfFile(BaseRegionInstrumenter.DIRECTORY, programName, className, methodName);
-    throw new UnsupportedOperationException("Deprecated");
-  }
-
-  public void savePdfFile(String dir, String programName, String className, String methodName)
+  public static void savePdfFile(
+      String dir, String programName, String className, String methodName, String methodNameSuffx)
       throws IOException, InterruptedException {
+    String fileNamePrefix =
+        dir + "/" + programName + "/" + className + "/" + methodName + methodNameSuffx;
+    String dotFileName = fileNamePrefix + PrettyMethodGraph.DOT_DOT;
+    String pdfFileName = fileNamePrefix + PrettyMethodGraph.DOT_PDF;
+
     List<String> commandList = new ArrayList<>();
     commandList.add("dot");
     commandList.add("-Tpdf");
-    commandList.add(
-        dir + "/" + programName + "/" + className + "/" + methodName + PrettyMethodGraph.DOT_DOT);
+    commandList.add(dotFileName);
     commandList.add("-o");
-    commandList.add(
-        dir + "/" + programName + "/" + className + "/" + methodName + PrettyMethodGraph.DOT_PDF);
+    commandList.add(pdfFileName);
 
     String[] command = new String[commandList.size()];
     command = commandList.toArray(command);
@@ -84,7 +73,19 @@ public class PrettyMethodGraph extends MethodGraph {
     }
   }
 
-  String toDotStringVerbose(String methodName) {
+  @Deprecated
+  public void saveDotFile(String programName, String className, String methodName) {
+    throw new UnsupportedOperationException("Deprecated");
+    //    this.saveDotFile(BaseRegionInstrumenter.DIRECTORY, programName, className, methodName);
+  }
+
+  @Deprecated
+  public void savePdfFile(String programName, String className, String methodName) {
+    //    this.savePdfFile(BaseRegionInstrumenter.DIRECTORY, programName, className, methodName);
+    throw new UnsupportedOperationException("Deprecated");
+  }
+
+  public String toDotStringVerbose(String methodName) {
     Set<MethodBlock> blocks = this.getBlocks();
     Set<PrettyMethodBlock> prettyBlocks = new HashSet<>();
 
