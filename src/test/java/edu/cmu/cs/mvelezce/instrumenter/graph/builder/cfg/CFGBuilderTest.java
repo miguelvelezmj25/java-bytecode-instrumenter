@@ -2,6 +2,7 @@ package edu.cmu.cs.mvelezce.instrumenter.graph.builder.cfg;
 
 import edu.cmu.cs.mvelezce.adapter.adapters.pngtastic.BasePngtasticAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
+import edu.cmu.cs.mvelezce.adapter.adapters.whileTrueNoReturn.BaseWhileTrueNoReturnAdapter;
 import edu.cmu.cs.mvelezce.instrumenter.graph.MethodGraph;
 import edu.cmu.cs.mvelezce.instrumenter.transform.classnode.DefaultClassTransformer;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
@@ -22,6 +23,20 @@ public class CFGBuilderTest {
     ClassNode classNode = this.getClassNode(className, classDir);
 
     String methodName = "main";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void whileTrueNoReturn_1()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = BaseWhileTrueNoReturnAdapter.MAIN_CLASS;
+    String classDir = BaseWhileTrueNoReturnAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "some";
     MethodNode methodNode = this.getMethodNode(methodName, classNode);
 
     MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);

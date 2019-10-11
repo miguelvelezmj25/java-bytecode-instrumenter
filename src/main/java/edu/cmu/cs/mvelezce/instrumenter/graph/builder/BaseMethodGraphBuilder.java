@@ -132,11 +132,6 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     this.connectBlockWithLastInstruction(graph, methodNode);
     this.connectBlocksWithExplicitThrows(graph, methodNode);
 
-    if (graph.getBlockCount() == 3) {
-      throw new InvalidGraphException(
-          "There seems to be a special case for graphs with 3 blocks. Test it");
-    }
-
     //    // TODO do not hard code 3. This can happen if the method has a while(true) loop. Then
     // there is
     //    // no return
@@ -195,11 +190,6 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
 
       if (!instructions.contains(lastInstruction)) {
         continue;
-      }
-
-      if (methodBlock.getInstructions().size() <= 1) {
-        throw new RuntimeException("What does the last block have less than two instructions?");
-        //        continue;
       }
 
       methodBlock.setWithLastInstruction(true);

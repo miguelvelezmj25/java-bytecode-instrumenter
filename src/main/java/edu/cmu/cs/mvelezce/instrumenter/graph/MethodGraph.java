@@ -288,6 +288,11 @@ public class MethodGraph {
     StringBuilder dotString = new StringBuilder("digraph " + methodName + " {\n");
 
     for (MethodBlock methodBlock : this.blocks.values()) {
+      dotString.append(methodBlock.getID());
+      dotString.append(";\n");
+    }
+
+    for (MethodBlock methodBlock : this.blocks.values()) {
       for (MethodBlock successor : methodBlock.getSuccessors()) {
         dotString.append(methodBlock.getID());
         dotString.append(" -> ");
