@@ -9,7 +9,6 @@ import jdk.internal.org.objectweb.asm.tree.LabelNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
 import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -41,9 +40,49 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     this.connectEntryNode(graph, methodNode);
     this.connectExitNode(graph, methodNode);
     //    this.processTryCatchBlocks(graph, methodNode);
-    this.checkEntryAndExitBlocks(graph);
+    this.validateGraph(graph);
 
     return graph;
+  }
+
+  private void validateGraph(MethodGraph graph) {
+    this.checkSuccsAndPreds(graph);
+    this.checkEntryAndExitBlocks(graph);
+  }
+
+  private void checkSuccsAndPreds(MethodGraph graph) {
+    MethodBlock entry = graph.getEntryBlock();
+    MethodBlock exit = graph.getExitBlock();
+
+    for (MethodBlock block : graph.getBlocks()) {
+      if (block.equals(entry) || block.equals(exit)) {
+        continue;
+      }
+
+      Set<MethodBlock> succs = block.getSuccessors();
+      Set<MethodBlock> preds = block.getPredecessors();
+
+      if (!succs.isEmpty() && !preds.isEmpty()) {
+        continue;
+      }
+
+      if (succs.isEmpty() && preds.isEmpty()) {
+        continue;
+      }
+
+      if (succs.isEmpty()) {
+        throw new InvalidGraphException(
+            graph, "The block " + block.getID() + " has preds, but no succs");
+      } else {
+        if (block.getInstructions().size() == 1) {
+          System.err.println("This method probably is a 'while true'");
+          continue;
+        }
+
+        throw new InvalidGraphException(
+            graph, "The block " + block.getID() + " has succs, but not preds");
+      }
+    }
   }
 
   private void processTryCatchBlocks(MethodGraph graph, MethodNode methodNode) {
@@ -75,8 +114,9 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     Set<MethodBlock> exitPreds = graph.getExitBlock().getPredecessors();
 
     if (exitPreds.isEmpty()) {
-      throw new InvalidGraphException(
-          "The graph does not have a connection to the exit block\n" + graph.toDotString("error"));
+      System.err.println("This method probably is a 'while true'");
+
+      return;
     }
 
     for (MethodBlock block : exitPreds) {
@@ -130,7 +170,7 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
   public void connectExitNode(MethodGraph graph, MethodNode methodNode) {
     this.connectBlocksWithReturn(graph);
     this.connectBlockWithLastInstruction(graph, methodNode);
-    this.connectBlocksWithExplicitThrows(graph, methodNode);
+    this.connectBlocksWithExplicitThrows(graph);
 
     //    // TODO do not hard code 3. This can happen if the method has a while(true) loop. Then
     // there is
@@ -153,21 +193,13 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     //    }
   }
 
-  private void connectBlocksWithExplicitThrows(MethodGraph graph, MethodNode methodNode) {
-    Set<MethodBlock> handlers = new HashSet<>();
-
-    for (TryCatchBlockNode tryCatchBlockNode : methodNode.tryCatchBlocks) {
-      AbstractInsnNode handler = tryCatchBlockNode.handler;
-      MethodBlock block = graph.getMethodBlock(handler);
-      handlers.add(block);
-    }
-
+  private void connectBlocksWithExplicitThrows(MethodGraph graph) {
     for (MethodBlock methodBlock : graph.getBlocks()) {
-      if (methodBlock.equals(graph.getEntryBlock()) || methodBlock.equals(graph.getExitBlock())) {
+      if (methodBlock.isHandlerBlock()) {
         continue;
       }
 
-      if (handlers.contains(methodBlock)) {
+      if (methodBlock.equals(graph.getEntryBlock()) || methodBlock.equals(graph.getExitBlock())) {
         continue;
       }
 
@@ -186,6 +218,10 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     AbstractInsnNode lastInstruction = methodNode.instructions.getLast();
 
     for (MethodBlock methodBlock : graph.getBlocks()) {
+      if (methodBlock.isHandlerBlock()) {
+        continue;
+      }
+
       List<AbstractInsnNode> instructions = methodBlock.getInstructions();
 
       if (!instructions.contains(lastInstruction)) {
@@ -202,6 +238,10 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
 
   private void connectBlocksWithReturn(MethodGraph graph) {
     for (MethodBlock methodBlock : graph.getBlocks()) {
+      if (methodBlock.isHandlerBlock()) {
+        continue;
+      }
+
       // TODO find the last instruction of a method block
       for (AbstractInsnNode instruction : methodBlock.getInstructions()) {
         int opcode = instruction.getOpcode();

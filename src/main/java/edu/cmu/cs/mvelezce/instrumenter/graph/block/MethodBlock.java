@@ -14,6 +14,7 @@ public class MethodBlock {
   private Set<MethodBlock> successors = new HashSet<>();
   private Set<MethodBlock> predecessors = new HashSet<>();
   private boolean withReturn = false;
+  private boolean isHandlerBlock = false;
   private boolean catchWithImplicitThrow = false;
   private boolean withLastInstruction = false;
   private boolean withExplicitThrow = false;
@@ -28,6 +29,14 @@ public class MethodBlock {
 
   public static String asID(AbstractInsnNode insnNode) {
     return insnNode.hashCode() + "";
+  }
+
+  public boolean isHandlerBlock() {
+    return isHandlerBlock;
+  }
+
+  public void setHandlerBlock(boolean handlerBlock) {
+    isHandlerBlock = handlerBlock;
   }
 
   public void addSuccessor(MethodBlock methodBlock) {

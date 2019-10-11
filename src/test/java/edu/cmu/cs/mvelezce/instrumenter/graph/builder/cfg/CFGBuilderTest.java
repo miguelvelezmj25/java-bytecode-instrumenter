@@ -1,5 +1,6 @@
 package edu.cmu.cs.mvelezce.instrumenter.graph.builder.cfg;
 
+import edu.cmu.cs.mvelezce.adapter.adapters.measureDiskOrderedScan.BaseMeasureDiskOrderedScanAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.pngtastic.BasePngtasticAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.whileTrueNoReturn.BaseWhileTrueNoReturnAdapter;
@@ -23,6 +24,62 @@ public class CFGBuilderTest {
     ClassNode classNode = this.getClassNode(className, classDir);
 
     String methodName = "main";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void berkeley_1()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.dbi.MemoryBudget";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "<clinit>";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void berkeley_2()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.tree.LN";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "logInternal";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void berkeley_3()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.rep.impl.networkRestore.FeederManager";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "run";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void berkeley_4()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.util.DbRunAction$StatsPrinter";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "run";
     MethodNode methodNode = this.getMethodNode(methodName, classNode);
 
     MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);

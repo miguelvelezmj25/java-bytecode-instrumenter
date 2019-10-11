@@ -144,7 +144,7 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     MethodBlock exitBlock = graph.getExitBlock();
 
     for (MethodBlock block : graph.getBlocks()) {
-      if (block == entryBlock || block == exitBlock) {
+      if (block == entryBlock || block == exitBlock || block.isHandlerBlock()) {
         continue;
       }
 
@@ -163,6 +163,11 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
         int succIndex = this.nodesToIndexes.get(succ);
         AbstractInsnNode succInsn = insnList.get(succIndex);
         MethodBlock succBlock = graph.getMethodBlock(succInsn);
+
+        if (succBlock.isHandlerBlock()) {
+          continue;
+        }
+
         graph.addEdge(block, succBlock);
       }
     }
@@ -172,6 +177,12 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
   public void addInstructions(MethodGraph graph, MethodNode methodNode) {
     List<AbstractInsnNode> curInsnList = null;
     Iterator<AbstractInsnNode> insnIter = methodNode.instructions.iterator();
+
+    Set<AbstractInsnNode> handlerInstructions = new HashSet<>();
+
+    for (TryCatchBlockNode tryCatchBlockNode : methodNode.tryCatchBlocks) {
+      handlerInstructions.add(tryCatchBlockNode.handler);
+    }
 
     while (insnIter.hasNext()) {
       AbstractInsnNode insn = insnIter.next();
@@ -184,6 +195,10 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
 
         curInsnList.add(insn);
       } else {
+        if (handlerInstructions.contains(insn)) {
+          block.setHandlerBlock(true);
+        }
+
         curInsnList = block.getInstructions();
         curInsnList.add(insn);
       }
@@ -253,13 +268,15 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     }
 
     protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
-      return true;
+      //      return true;
+      return false;
     }
 
     protected boolean newControlFlowExceptionEdge(int insnIndex, TryCatchBlockNode tryCatchBlock) {
-      int handlerIndex = this.instructions.indexOf(tryCatchBlock.handler);
-
-      return this.newControlFlowExceptionEdge(insnIndex, handlerIndex);
+      return false;
+      //      int handlerIndex = this.instructions.indexOf(tryCatchBlock.handler);
+      //
+      //      return this.newControlFlowExceptionEdge(insnIndex, handlerIndex);
     }
   }
 }
