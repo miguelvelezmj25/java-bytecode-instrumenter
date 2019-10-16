@@ -9,6 +9,7 @@ public final class ASMNames {
   }
 
   public static String getPackageName(ClassNode classNode) {
+    System.err.println("This logic might be wrong. Why do we care about source file?");
     String name = classNode.name;
     String sourceFile = classNode.sourceFile;
     String className = sourceFile.replace(".java", "");
@@ -20,6 +21,7 @@ public final class ASMNames {
   }
 
   public static String getClassName(ClassNode classNode) {
+    System.err.println("This logic might be wrong. Why do we care about source file?");
     String sourceFile = classNode.sourceFile;
 
     return sourceFile.replace(".java", "");
