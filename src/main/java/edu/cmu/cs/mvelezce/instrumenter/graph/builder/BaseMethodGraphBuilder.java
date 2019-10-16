@@ -228,6 +228,10 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
         continue;
       }
 
+      if (methodBlock.getPredecessors().isEmpty()) {
+        continue;
+      }
+
       methodBlock.setWithLastInstruction(true);
 
       if (!methodBlock.getSuccessors().contains(graph.getExitBlock())) {

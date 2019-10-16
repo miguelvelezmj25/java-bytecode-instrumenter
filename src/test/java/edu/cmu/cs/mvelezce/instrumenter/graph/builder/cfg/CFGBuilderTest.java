@@ -1,5 +1,6 @@
 package edu.cmu.cs.mvelezce.instrumenter.graph.builder.cfg;
 
+import edu.cmu.cs.mvelezce.adapter.adapters.indexFiles.BaseIndexFilesAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.measureDiskOrderedScan.BaseMeasureDiskOrderedScanAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.pngtastic.BasePngtasticAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
@@ -87,6 +88,20 @@ public class CFGBuilderTest {
   }
 
   @Test
+  public void berkeley_5()
+          throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.rep.impl.node.ReplicaFactory$1";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "doRunReplicaLoopInternalWork";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
   public void whileTrueNoReturn_1()
       throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
     String className = BaseWhileTrueNoReturnAdapter.MAIN_CLASS;
@@ -108,6 +123,20 @@ public class CFGBuilderTest {
     ClassNode classNode = this.getClassNode(className, classDir);
 
     String methodName = "getColors";
+    MethodNode methodNode = this.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void lucene_1()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "org.apache.lucene.core.search.ConjunctionDISI$BitSetConjunctionDISI";
+    String classDir = BaseIndexFilesAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = this.getClassNode(className, classDir);
+
+    String methodName = "doNext";
     MethodNode methodNode = this.getMethodNode(methodName, classNode);
 
     MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
