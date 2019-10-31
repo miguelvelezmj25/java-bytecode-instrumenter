@@ -1,9 +1,9 @@
 package edu.cmu.cs.mvelezce.instrumenter.graph;
 
-import com.sun.istack.internal.Nullable;
 import edu.cmu.cs.mvelezce.instrumenter.graph.block.MethodBlock;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class MethodGraph {
@@ -19,9 +19,14 @@ public class MethodGraph {
     this.blocks.put(this.exitBlock.getID(), this.exitBlock);
   }
 
+  @Nullable
   public MethodBlock getImmediatePostDominator(MethodBlock methodBlock) {
     MethodGraph reversedGraph = this.reverseGraph();
     MethodBlock immediatePostDominator = reversedGraph.getImmediateDominator(methodBlock);
+
+    if (immediatePostDominator == null) {
+      return null;
+    }
 
     return this.getMethodBlock(immediatePostDominator.getID());
   }
@@ -111,7 +116,7 @@ public class MethodGraph {
       return ids.iterator().next();
     }
 
-    boolean connectedToStart = this.isConnectedToStart(start);
+    boolean connectedToStart = this.isConnectedToEntry(start);
 
     if (!connectedToStart) {
       return null;
@@ -120,29 +125,11 @@ public class MethodGraph {
     throw new RuntimeException("Could not find an immediate dominator for " + start.getID());
   }
 
-  // TODO should be dfs not bfs
-  private boolean isConnectedToStart(MethodBlock start) {
-    if (start.equals(this.entryBlock)) {
-      return true;
-    }
+  public boolean isConnectedToEntry(MethodBlock block) {
+    MethodGraph reversedGraph = this.reverseGraph();
+    Set<MethodBlock> reachables = this.getReachableBlocks(block, reversedGraph.entryBlock);
 
-    Queue<MethodBlock> queue = new ArrayDeque<>(start.getPredecessors());
-
-    if (start.getPredecessors().isEmpty()) {
-      return false;
-    }
-
-    while (!queue.isEmpty()) {
-      MethodBlock cur = queue.poll();
-
-      if (cur.equals(this.entryBlock)) {
-        return true;
-      }
-
-      queue.addAll(cur.getPredecessors());
-    }
-
-    return false;
+    return reachables.contains(reversedGraph.entryBlock);
   }
 
   public MethodGraph reverseGraph() {
