@@ -42,7 +42,7 @@ public class PrettyMethodGraphBuilder extends BaseMethodGraphBuilder {
   @Override
   public void addEdges(MethodGraph graph, MethodNode methodNode) {
     for (MethodBlock block : this.graph.getBlocks()) {
-      if (block == this.graph.getEntryBlock() || block == this.graph.getExitBlock()) {
+      if (block.isSpecial()) {
         continue;
       }
 
@@ -58,11 +58,11 @@ public class PrettyMethodGraphBuilder extends BaseMethodGraphBuilder {
   @Override
   public void addBlocks(MethodGraph graph, MethodNode methodNode) {
     for (MethodBlock block : this.graph.getBlocks()) {
-      if (block == this.graph.getEntryBlock() || block == this.graph.getExitBlock()) {
+      if (block.isSpecial()) {
         continue;
       }
 
-      PrettyMethodBlock prettyBlock = new PrettyMethodBlock(block.getID());
+      PrettyMethodBlock prettyBlock = new PrettyMethodBlock.Builder(block.getID()).builder();
       this.prettyGraph.addMethodBlock(prettyBlock);
     }
   }
@@ -70,7 +70,7 @@ public class PrettyMethodGraphBuilder extends BaseMethodGraphBuilder {
   @Override
   public void addInstructions(MethodGraph graph, MethodNode methodNode) {
     for (MethodBlock block : this.graph.getBlocks()) {
-      if (block == this.graph.getEntryBlock() || block == this.graph.getExitBlock()) {
+      if (block.isSpecial()) {
         continue;
       }
 

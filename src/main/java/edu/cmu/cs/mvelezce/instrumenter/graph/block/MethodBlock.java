@@ -8,23 +8,22 @@ import java.util.List;
 import java.util.Set;
 
 public class MethodBlock {
+  private final String ID;
+  private final List<AbstractInsnNode> instructions = new ArrayList<>();
+  private final Set<MethodBlock> successors = new HashSet<>();
+  private final Set<MethodBlock> predecessors = new HashSet<>();
+  private final boolean special;
 
-  private String ID;
-  private List<AbstractInsnNode> instructions = new ArrayList<>();
-  private Set<MethodBlock> successors = new HashSet<>();
-  private Set<MethodBlock> predecessors = new HashSet<>();
   private boolean withReturn = false;
-  private boolean isHandlerBlock = false;
-  private boolean catchWithImplicitThrow = false;
   private boolean withLastInstruction = false;
   private boolean withExplicitThrow = false;
+  private boolean isHandlerBlock = false;
 
-  public MethodBlock(AbstractInsnNode insnNode) {
-    this(MethodBlock.asID(insnNode));
-  }
+  private boolean catchWithImplicitThrow = false;
 
-  public MethodBlock(String ID) {
-    this.ID = ID;
+  MethodBlock(Builder builder) {
+    this.ID = builder.ID;
+    this.special = builder.special;
   }
 
   public static String asID(AbstractInsnNode insnNode) {
@@ -100,9 +99,9 @@ public class MethodBlock {
     this.withReturn = withReturn;
   }
 
-  public boolean isCatchWithImplicitThrow() {
-    return this.catchWithImplicitThrow;
-  }
+  //    public boolean isCatchWithImplicitThrow() {
+  //      return this.catchWithImplicitThrow;
+  //    }
 
   public void setCatchWithImplicitThrow(boolean catchWithImplicitThrow) {
     this.catchWithImplicitThrow = catchWithImplicitThrow;
@@ -122,5 +121,33 @@ public class MethodBlock {
 
   public void setWithExplicitThrow(boolean withExplicitThrow) {
     this.withExplicitThrow = withExplicitThrow;
+  }
+
+  public boolean isSpecial() {
+    return special;
+  }
+
+  public static class Builder {
+    private final String ID;
+
+    private boolean special = false;
+
+    public Builder(String id) {
+      this.ID = id;
+    }
+
+    public Builder(AbstractInsnNode insnNode) {
+      this(MethodBlock.asID(insnNode));
+    }
+
+    public Builder special(boolean special) {
+      this.special = special;
+
+      return this;
+    }
+
+    public MethodBlock build() {
+      return new MethodBlock(this);
+    }
   }
 }

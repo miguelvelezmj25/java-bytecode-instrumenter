@@ -7,11 +7,22 @@ public class PrettyMethodBlock extends MethodBlock {
 
   private List<String> prettyInstructions = new ArrayList<>();
 
-  public PrettyMethodBlock(String ID) {
-    super(ID);
+  private PrettyMethodBlock(Builder builder) {
+    super(builder);
   }
 
   public List<String> getPrettyInstructions() {
     return this.prettyInstructions;
+  }
+
+  public static class Builder extends MethodBlock.Builder {
+
+    public Builder(String id) {
+      super(id);
+    }
+
+    public PrettyMethodBlock builder() {
+      return new PrettyMethodBlock(this);
+    }
   }
 }

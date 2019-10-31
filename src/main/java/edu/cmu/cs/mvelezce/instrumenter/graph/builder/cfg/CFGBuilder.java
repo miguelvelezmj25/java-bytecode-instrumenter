@@ -38,7 +38,7 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
   @Override
   public void addBlocks(MethodGraph graph, MethodNode methodNode) {
     InsnList insnList = methodNode.instructions;
-    MethodBlock initialBlock = new MethodBlock(insnList.getFirst());
+    MethodBlock initialBlock = new MethodBlock.Builder(insnList.getFirst()).build();
     graph.addMethodBlock(initialBlock);
 
     Frame<BasicValue>[] frames = this.analyzer.getFrames();
@@ -92,7 +92,7 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     MethodBlock block = graph.getMethodBlock(insn);
 
     if (block == null) {
-      block = new MethodBlock(insn);
+      block = new MethodBlock.Builder(insn).build();
       graph.addMethodBlock(block);
     }
   }
@@ -125,13 +125,13 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     for (CFGNode<BasicValue> succ : succs) {
       int succIndex = this.nodesToIndexes.get(succ);
       AbstractInsnNode succInsn = insnList.get(succIndex);
-      MethodBlock succBlock = new MethodBlock(succInsn);
+      MethodBlock succBlock = new MethodBlock.Builder(succInsn).build();
       graph.addMethodBlock(succBlock);
     }
 
     // For non-conditional jumps, the next instruction should be in a separate node
     AbstractInsnNode nextInsn = insn.getNext();
-    MethodBlock block = new MethodBlock(nextInsn);
+    MethodBlock block = new MethodBlock.Builder(nextInsn).build();
     graph.addMethodBlock(block);
   }
 
@@ -140,11 +140,8 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     Frame<BasicValue>[] frames = this.analyzer.getFrames();
     InsnList insnList = methodNode.instructions;
 
-    MethodBlock entryBlock = graph.getEntryBlock();
-    MethodBlock exitBlock = graph.getExitBlock();
-
     for (MethodBlock block : graph.getBlocks()) {
-      if (block == entryBlock || block == exitBlock || block.isHandlerBlock()) {
+      if (block.isSpecial() || block.isHandlerBlock()) {
         continue;
       }
 

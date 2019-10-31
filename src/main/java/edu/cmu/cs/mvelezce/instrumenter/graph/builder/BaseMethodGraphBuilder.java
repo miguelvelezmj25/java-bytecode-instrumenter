@@ -51,11 +51,8 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
   }
 
   private void checkSuccsAndPreds(MethodGraph graph) {
-    MethodBlock entry = graph.getEntryBlock();
-    MethodBlock exit = graph.getExitBlock();
-
     for (MethodBlock block : graph.getBlocks()) {
-      if (block.equals(entry) || block.equals(exit)) {
+      if (block.isSpecial()) {
         continue;
       }
 
@@ -199,7 +196,7 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
         continue;
       }
 
-      if (methodBlock.equals(graph.getEntryBlock()) || methodBlock.equals(graph.getExitBlock())) {
+      if (methodBlock.isSpecial()) {
         continue;
       }
 

@@ -7,12 +7,11 @@ import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import java.util.*;
 
 public class MethodGraph {
+  private final MethodBlock entryBlock = new MethodBlock.Builder("entry").special(true).build();
+  private final MethodBlock exitBlock = new MethodBlock.Builder("exit").special(true).build();
+  private final Map<String, MethodBlock> blocks = new HashMap<>();
+  private final Map<MethodBlock, Set<MethodBlock>> blocksToDominators = new HashMap<>();
 
-  // TODO create a single exit block for the graph
-  private MethodBlock entryBlock = new MethodBlock("entry");
-  private MethodBlock exitBlock = new MethodBlock("exit");
-  private Map<String, MethodBlock> blocks = new HashMap<>();
-  private Map<MethodBlock, Set<MethodBlock>> blocksToDominators = new HashMap<>();
   private boolean withWhileTrue = false;
 
   public MethodGraph() {
@@ -151,7 +150,11 @@ public class MethodGraph {
     Set<MethodBlock> blocks = new HashSet<>(this.blocks.values());
 
     for (MethodBlock block : blocks) {
-      MethodBlock newBlock = new MethodBlock(block.getID());
+      if (block.isSpecial()) {
+        continue;
+      }
+
+      MethodBlock newBlock = new MethodBlock.Builder(block.getID()).build();
       reversedGraph.addMethodBlock(newBlock);
     }
 
@@ -166,9 +169,6 @@ public class MethodGraph {
         reversedGraph.addEdge(newSuccessorBlock, newBlock);
       }
     }
-
-    reversedGraph.entryBlock = reversedGraph.blocks.get(this.exitBlock.getID());
-    reversedGraph.exitBlock = reversedGraph.blocks.get(this.entryBlock.getID());
 
     return reversedGraph;
   }
