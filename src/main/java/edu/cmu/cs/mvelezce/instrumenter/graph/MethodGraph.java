@@ -7,11 +7,11 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 public class MethodGraph {
-  private final MethodBlock entryBlock = new MethodBlock.Builder("entry").special(true).build();
-  private final MethodBlock exitBlock = new MethodBlock.Builder("exit").special(true).build();
   private final Map<String, MethodBlock> blocks = new HashMap<>();
   private final Map<MethodBlock, Set<MethodBlock>> blocksToDominators = new HashMap<>();
 
+  private MethodBlock entryBlock = new MethodBlock.Builder("entry").special(true).build();
+  private MethodBlock exitBlock = new MethodBlock.Builder("exit").special(true).build();
   private boolean withWhileTrue = false;
 
   public MethodGraph() {
@@ -126,10 +126,9 @@ public class MethodGraph {
   }
 
   public boolean isConnectedToEntry(MethodBlock block) {
-    MethodGraph reversedGraph = this.reverseGraph();
-    Set<MethodBlock> reachables = this.getReachableBlocks(block, reversedGraph.entryBlock);
+    Set<MethodBlock> reachables = this.getReachableBlocks(this.entryBlock, block);
 
-    return reachables.contains(reversedGraph.entryBlock);
+    return reachables.contains(block);
   }
 
   public MethodGraph reverseGraph() {
@@ -137,10 +136,6 @@ public class MethodGraph {
     Set<MethodBlock> blocks = new HashSet<>(this.blocks.values());
 
     for (MethodBlock block : blocks) {
-      if (block.isSpecial()) {
-        continue;
-      }
-
       MethodBlock newBlock = new MethodBlock.Builder(block.getID()).build();
       reversedGraph.addMethodBlock(newBlock);
     }
@@ -156,6 +151,9 @@ public class MethodGraph {
         reversedGraph.addEdge(newSuccessorBlock, newBlock);
       }
     }
+
+    reversedGraph.entryBlock = reversedGraph.blocks.get(this.exitBlock.getID());
+    reversedGraph.exitBlock = reversedGraph.blocks.get(this.entryBlock.getID());
 
     return reversedGraph;
   }
