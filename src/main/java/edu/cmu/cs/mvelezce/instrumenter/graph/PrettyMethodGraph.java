@@ -1,8 +1,8 @@
 package edu.cmu.cs.mvelezce.instrumenter.graph;
 
-import edu.cmu.cs.mvelezce.adapter.utils.Executor;
 import edu.cmu.cs.mvelezce.instrumenter.graph.block.MethodBlock;
 import edu.cmu.cs.mvelezce.instrumenter.graph.block.PrettyMethodBlock;
+import edu.cmu.cs.mvelezce.utils.execute.Executor;
 
 import java.io.File;
 import java.io.FileNotFoundException;

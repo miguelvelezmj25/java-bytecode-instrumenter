@@ -1,7 +1,7 @@
 package edu.cmu.cs.mvelezce.instrumenter.instrument;
 
-import edu.cmu.cs.mvelezce.utils.Options;
-import edu.cmu.cs.mvelezce.utils.Packager;
+import edu.cmu.cs.mvelezce.utils.config.Options;
+import edu.cmu.cs.mvelezce.utils.jar.Packager;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
