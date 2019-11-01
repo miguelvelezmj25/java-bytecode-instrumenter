@@ -59,6 +59,7 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
       System.out.println("Transforming class " + classNode.name);
 
       for (MethodNode methodToInstrument : methodsToInstrument) {
+        System.out.println("Transforming method " + methodToInstrument.name);
         this.transformMethod(methodToInstrument, classNode);
       }
 
@@ -97,11 +98,20 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
       String doString = prettyGraph.toDotStringVerbose(methodNode.name);
 
       PrettyMethodGraph.saveDotFile(
-          doString, this.getDebugDir(), this.getProgramName(), classNode.name, methodNode.name, methodNode.name);
+          doString,
+          this.getDebugDir(),
+          this.getProgramName(),
+          classNode.name,
+          methodNode.name,
+          methodNode.name);
 
       try {
         PrettyMethodGraph.savePdfFile(
-            this.getDebugDir(), this.getProgramName(), classNode.name, methodNode.name, methodNode.name);
+            this.getDebugDir(),
+            this.getProgramName(),
+            classNode.name,
+            methodNode.name,
+            methodNode.name);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
