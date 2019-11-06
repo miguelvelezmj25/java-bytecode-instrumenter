@@ -108,6 +108,10 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
       Set<MethodBlock> preds = block.getPredecessors();
 
       if (succs.isEmpty() && preds.isEmpty()) {
+        if (block.isWithLastInstruction()) {
+          continue;
+        }
+
         throw new InvalidGraphException(graph, "The block " + block.getID() + " is dead code");
       }
 
@@ -256,7 +260,17 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
       }
 
       methodBlock.setWithLastInstruction(true);
-      graph.addEdge(methodBlock, graph.getExitBlock());
+
+      // The last instruction might not be connected to the rest of the graph if the second to last
+      // instruction is a jump
+      Set<MethodBlock> reachables =
+          graph.getReachableBlocks(graph.getEntryBlock(), graph.getExitBlock());
+
+      if (reachables.contains(methodBlock)) {
+        graph.addEdge(methodBlock, graph.getExitBlock());
+      }
+
+      break;
     }
   }
 
