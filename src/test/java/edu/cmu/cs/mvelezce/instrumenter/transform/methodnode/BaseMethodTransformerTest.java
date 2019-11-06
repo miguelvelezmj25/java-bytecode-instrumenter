@@ -1,5 +1,6 @@
 package edu.cmu.cs.mvelezce.instrumenter.transform.methodnode;
 
+import edu.cmu.cs.mvelezce.adapter.adapters.measureDiskOrderedScan.BaseMeasureDiskOrderedScanAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
 import edu.cmu.cs.mvelezce.instrumenter.transform.classnode.DefaultClassTransformer;
 import edu.cmu.cs.mvelezce.utils.config.Options;
@@ -21,6 +22,18 @@ public class BaseMethodTransformerTest {
     String programName = BaseTrivialAdapter.PROGRAM_NAME;
     String classDir = BaseTrivialAdapter.INSTRUMENTED_CLASS_PATH;
     String mainClass = BaseTrivialAdapter.MAIN_CLASS;
+
+    BaseMethodTransformer methodTransformer =
+        new InstructionPrinterMethodTransformer(programName, classDir, mainClass);
+    methodTransformer.transformMethods();
+  }
+
+  @Test
+  public void berkeley()
+      throws InvocationTargetException, NoSuchMethodException, IOException, IllegalAccessException {
+    String programName = BaseMeasureDiskOrderedScanAdapter.PROGRAM_NAME;
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    String mainClass = BaseMeasureDiskOrderedScanAdapter.MAIN_CLASS;
 
     BaseMethodTransformer methodTransformer =
         new InstructionPrinterMethodTransformer(programName, classDir, mainClass);

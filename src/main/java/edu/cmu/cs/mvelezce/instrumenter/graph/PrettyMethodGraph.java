@@ -107,8 +107,7 @@ public class PrettyMethodGraph extends MethodGraph {
 
       List<String> prettyInstructions = prettyMethodBlock.getPrettyInstructions();
 
-      for (int i = 0; i < prettyInstructions.size(); i++) {
-        String instruction = prettyInstructions.get(i);
+      for (String instruction : prettyInstructions) {
         instruction = instruction.replace("\"", "\\\"");
         instruction = instruction.replace("<", "\\<");
         instruction = instruction.replace(">", "\\>");
@@ -129,7 +128,13 @@ public class PrettyMethodGraph extends MethodGraph {
         dotString.append(methodBlock.getID());
         dotString.append(" -> ");
         dotString.append(successor.getID());
-        dotString.append(";\n");
+
+        if (!methodBlock.isSpecial()
+            && this.getExceptionalEdges().get(methodBlock).contains(successor)) {
+          dotString.append(" [style=dashed, color=red]");
+        }
+
+        dotString.append("\n");
       }
     }
 

@@ -4,6 +4,8 @@ import edu.cmu.cs.mvelezce.adapter.adapters.indexFiles.BaseIndexFilesAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.measureDiskOrderedScan.BaseMeasureDiskOrderedScanAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.pngtastic.BasePngtasticAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
+import edu.cmu.cs.mvelezce.adapter.adapters.tryCatchFinally.BaseTryCatchFinallyAdapter;
+import edu.cmu.cs.mvelezce.adapter.adapters.tryReturnCatch.BaseTryReturnCatchAdapter;
 import edu.cmu.cs.mvelezce.adapter.adapters.whileTrueNoReturn.BaseWhileTrueNoReturnAdapter;
 import edu.cmu.cs.mvelezce.instrumenter.graph.MethodGraph;
 import edu.cmu.cs.mvelezce.instrumenter.graph.TestUtils;
@@ -21,6 +23,34 @@ public class CFGBuilderTest {
       throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
     String className = BaseTrivialAdapter.MAIN_CLASS;
     String classDir = BaseTrivialAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = TestUtils.getClassNode(className, classDir);
+
+    String methodName = "main";
+    MethodNode methodNode = TestUtils.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void trivial_2()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = BaseTryReturnCatchAdapter.MAIN_CLASS;
+    String classDir = BaseTryReturnCatchAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = TestUtils.getClassNode(className, classDir);
+
+    String methodName = "main";
+    MethodNode methodNode = TestUtils.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void trivial_3()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = BaseTryCatchFinallyAdapter.MAIN_CLASS;
+    String classDir = BaseTryCatchFinallyAdapter.INSTRUMENTED_CLASS_PATH;
     ClassNode classNode = TestUtils.getClassNode(className, classDir);
 
     String methodName = "main";
@@ -94,6 +124,34 @@ public class CFGBuilderTest {
     ClassNode classNode = TestUtils.getClassNode(className, classDir);
 
     String methodName = "doRunReplicaLoopInternalWork";
+    MethodNode methodNode = TestUtils.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void berkeley_6()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.log.FileManager$LogEndFileDescriptor";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = TestUtils.getClassNode(className, classDir);
+
+    String methodName = "enqueueWrite";
+    MethodNode methodNode = TestUtils.getMethodNode(methodName, classNode);
+
+    MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);
+    System.out.println(graph.toDotString(methodNode.name));
+  }
+
+  @Test
+  public void berkeley_7()
+      throws NoSuchMethodException, IOException, IllegalAccessException, InvocationTargetException {
+    String className = "com.sleepycat.je.rep.arbiter.impl.ArbiterVLSNTracker";
+    String classDir = BaseMeasureDiskOrderedScanAdapter.INSTRUMENTED_CLASS_PATH;
+    ClassNode classNode = TestUtils.getClassNode(className, classDir);
+
+    String methodName = "readNodeId";
     MethodNode methodNode = TestUtils.getMethodNode(methodName, classNode);
 
     MethodGraph graph = CFGBuilder.getCfg(methodNode, classNode);

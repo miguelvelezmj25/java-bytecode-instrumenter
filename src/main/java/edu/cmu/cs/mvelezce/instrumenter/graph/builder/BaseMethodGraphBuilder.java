@@ -5,9 +5,9 @@ import edu.cmu.cs.mvelezce.instrumenter.graph.block.MethodBlock;
 import edu.cmu.cs.mvelezce.instrumenter.graph.exception.InvalidGraphException;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
+import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.internal.org.objectweb.asm.tree.LabelNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
-import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -15,18 +15,40 @@ import java.util.Set;
 
 public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
 
+  private final ClassNode classNode;
+  private final MethodNode methodNode;
+
+  public BaseMethodGraphBuilder(ClassNode classNode, MethodNode methodNode) {
+    this.classNode = classNode;
+    this.methodNode = methodNode;
+  }
+
+  private static boolean isExitMethodInsn(int opcodeLastInsn) {
+    return (opcodeLastInsn >= Opcodes.IRETURN && opcodeLastInsn <= Opcodes.RETURN)
+        || opcodeLastInsn == Opcodes.RET
+        || opcodeLastInsn == Opcodes.ATHROW;
+  }
+
+  public ClassNode getClassNode() {
+    return classNode;
+  }
+
+  public MethodNode getMethodNode() {
+    return methodNode;
+  }
+
   @Override
-  public MethodGraph build(MethodNode methodNode) {
+  public MethodGraph build() {
     MethodGraph graph = new MethodGraph();
 
     if (methodNode.instructions.size() == 0) {
       return graph;
     }
 
-    int instructionsInMethodNodeCount = this.getNumberOfInstructionsInMethodNode(methodNode);
+    int instructionsInMethodNodeCount = this.getNumberOfInstructionsInMethodNode();
 
-    this.addBlocks(graph, methodNode);
-    this.addInstructions(graph, methodNode);
+    this.addBlocks(graph);
+    this.addInstructions(graph);
 
     int instructionsInGraphCount = this.getNumberOfInstructionsInGraph(graph);
 
@@ -36,18 +58,44 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
               + " instructions in the graph");
     }
 
-    this.addEdges(graph, methodNode);
-    this.connectEntryNode(graph, methodNode);
-    this.connectExitNode(graph, methodNode);
-    //    this.processTryCatchBlocks(graph, methodNode);
+    this.addEdges(graph);
+    this.connectEntryNode(graph);
+    this.connectExitNode(graph);
     this.validateGraph(graph);
 
     return graph;
   }
 
   private void validateGraph(MethodGraph graph) {
-    this.checkSuccsAndPreds(graph);
     this.checkEntryAndExitBlocks(graph);
+    this.checkSingleReturnInBlock(graph);
+    this.checkSuccsAndPreds(graph);
+  }
+
+  private void checkSingleReturnInBlock(MethodGraph graph) {
+    for (MethodBlock block : graph.getBlocks()) {
+      if (block.isSpecial()) {
+        continue;
+      }
+
+      int returnInsnCount = 0;
+
+      for (AbstractInsnNode insnNode : block.getInstructions()) {
+        if (BaseMethodGraphBuilder.isExitMethodInsn(insnNode.getOpcode())) {
+          returnInsnCount++;
+        }
+      }
+
+      if (returnInsnCount > 1) {
+        throw new InvalidGraphException(
+            graph,
+            "The graph for "
+                + classNode.name
+                + " - "
+                + methodNode.name
+                + " has a block with more than 1 exit graph instruction");
+      }
+    }
   }
 
   private void checkSuccsAndPreds(MethodGraph graph) {
@@ -59,43 +107,29 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
       Set<MethodBlock> succs = block.getSuccessors();
       Set<MethodBlock> preds = block.getPredecessors();
 
-      if (!succs.isEmpty() && !preds.isEmpty()) {
-        continue;
-      }
-
       if (succs.isEmpty() && preds.isEmpty()) {
-        continue;
+        throw new InvalidGraphException(graph, "The block " + block.getID() + " is dead code");
       }
 
       if (succs.isEmpty()) {
-        throw new InvalidGraphException(
-            graph, "The block " + block.getID() + " has preds, but no succs");
-      } else {
-        if (block.getInstructions().size() == 1) {
-          System.err.println("This method probably is a 'while true'");
-          continue;
+        Set<MethodBlock> reachables = graph.getReachableBlocks(graph.getEntryBlock(), block);
+
+        if (reachables.contains(block)) {
+          throw new InvalidGraphException(graph, "What is happening?");
+        } else {
+          throw new InvalidGraphException(graph, "The block " + block.getID() + " has no succs");
         }
-
-        throw new InvalidGraphException(
-            graph, "The block " + block.getID() + " has succs, but not preds");
-      }
-    }
-  }
-
-  private void processTryCatchBlocks(MethodGraph graph, MethodNode methodNode) {
-    for (TryCatchBlockNode tryCatchBlockNode : methodNode.tryCatchBlocks) {
-      AbstractInsnNode handler = tryCatchBlockNode.handler;
-      MethodBlock block = graph.getMethodBlock(handler);
-
-      if (block.getPredecessors().isEmpty()) {
-        block.setCatchWithImplicitThrow(true);
       }
 
-      //      LabelNode start = tryCatchBlockNode.start;
-      //      MethodBlock methodBlock = graph.getMethodBlock(start);
-      //
-      //      MethodBlock methodBlockHandler = graph.getMethodBlock(handler);
-      //      graph.addEdge(methodBlock, methodBlockHandler);
+      if (preds.isEmpty()) {
+        Set<MethodBlock> reachables = graph.getReachableBlocks(block, graph.getExitBlock());
+
+        if (reachables.contains(graph.getExitBlock())) {
+          System.err.println("Probably a while true method");
+        } else {
+          throw new InvalidGraphException(graph, "The block " + block.getID() + " has no pred");
+        }
+      }
     }
   }
 
@@ -109,12 +143,6 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     }
 
     Set<MethodBlock> exitPreds = graph.getExitBlock().getPredecessors();
-
-    if (exitPreds.isEmpty()) {
-      System.err.println("This method probably is a 'while true'");
-
-      return;
-    }
 
     for (MethodBlock block : exitPreds) {
       if (!block.isWithReturn()
@@ -138,9 +166,9 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
     return count;
   }
 
-  private int getNumberOfInstructionsInMethodNode(MethodNode methodNode) {
+  private int getNumberOfInstructionsInMethodNode() {
     int count = 0;
-    ListIterator<AbstractInsnNode> instructionIter = methodNode.instructions.iterator();
+    ListIterator<AbstractInsnNode> instructionIter = this.methodNode.instructions.iterator();
 
     while (instructionIter.hasNext()) {
       instructionIter.next();
@@ -151,7 +179,7 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
   }
 
   @Override
-  public void connectEntryNode(MethodGraph graph, MethodNode methodNode) {
+  public void connectEntryNode(MethodGraph graph) {
     AbstractInsnNode instruction = methodNode.instructions.getFirst();
 
     if (instruction.getType() != AbstractInsnNode.LABEL) {
@@ -160,13 +188,14 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
 
     LabelNode labelNode = (LabelNode) instruction;
     MethodBlock firstBlock = graph.getMethodBlock(labelNode);
+
     graph.addEdge(graph.getEntryBlock(), firstBlock);
   }
 
   @Override
-  public void connectExitNode(MethodGraph graph, MethodNode methodNode) {
+  public void connectExitNode(MethodGraph graph) {
     this.connectBlocksWithReturn(graph);
-    this.connectBlockWithLastInstruction(graph, methodNode);
+    this.connectBlockWithLastInstruction(graph);
     this.connectBlocksWithExplicitThrows(graph);
 
     //    // TODO do not hard code 3. This can happen if the method has a while(true) loop. Then
@@ -192,30 +221,31 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
 
   private void connectBlocksWithExplicitThrows(MethodGraph graph) {
     for (MethodBlock methodBlock : graph.getBlocks()) {
-      if (methodBlock.isHandlerBlock()) {
-        continue;
-      }
 
       if (methodBlock.isSpecial()) {
         continue;
       }
 
-      List<AbstractInsnNode> instructions = methodBlock.getInstructions();
-      AbstractInsnNode lastInstruction = instructions.get(instructions.size() - 1);
+      // TODO find the last instruction of a method block
+      for (AbstractInsnNode instruction : methodBlock.getInstructions()) {
+        int opcode = instruction.getOpcode();
 
-      if (lastInstruction.getOpcode() == Opcodes.ATHROW) {
-        methodBlock.setWithExplicitThrow(true);
-        graph.addEdge(methodBlock, graph.getExitBlock());
+        if (opcode == Opcodes.ATHROW) {
+          methodBlock.setWithExplicitThrow(true);
+          graph.addEdge(methodBlock, graph.getExitBlock());
+
+          break;
+        }
       }
     }
   }
 
-  private void connectBlockWithLastInstruction(MethodGraph graph, MethodNode methodNode) {
+  private void connectBlockWithLastInstruction(MethodGraph graph) {
     // The last block of a method might not have a return (e.g., ATHROW)
     AbstractInsnNode lastInstruction = methodNode.instructions.getLast();
 
     for (MethodBlock methodBlock : graph.getBlocks()) {
-      if (methodBlock.isHandlerBlock()) {
+      if (methodBlock.isSpecial()) {
         continue;
       }
 
@@ -225,21 +255,14 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
         continue;
       }
 
-      if (methodBlock.getPredecessors().isEmpty()) {
-        continue;
-      }
-
       methodBlock.setWithLastInstruction(true);
-
-      if (!methodBlock.getSuccessors().contains(graph.getExitBlock())) {
-        graph.addEdge(methodBlock, graph.getExitBlock());
-      }
+      graph.addEdge(methodBlock, graph.getExitBlock());
     }
   }
 
   private void connectBlocksWithReturn(MethodGraph graph) {
     for (MethodBlock methodBlock : graph.getBlocks()) {
-      if (methodBlock.isHandlerBlock()) {
+      if (methodBlock.isSpecial()) {
         continue;
       }
 
@@ -250,6 +273,8 @@ public abstract class BaseMethodGraphBuilder implements MethodGraphBuilder {
         if (opcode == Opcodes.RET || (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN)) {
           methodBlock.setWithReturn(true);
           graph.addEdge(methodBlock, graph.getExitBlock());
+
+          break;
         }
       }
     }

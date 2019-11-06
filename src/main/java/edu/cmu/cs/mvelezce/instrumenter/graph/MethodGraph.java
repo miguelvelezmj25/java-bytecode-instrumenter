@@ -9,6 +9,7 @@ import java.util.*;
 public class MethodGraph {
   private final Map<String, MethodBlock> blocks = new HashMap<>();
   private final Map<MethodBlock, Set<MethodBlock>> blocksToDominators = new HashMap<>();
+  private final Map<MethodBlock, Set<MethodBlock>> exceptionalEdges = new HashMap<>();
 
   private MethodBlock entryBlock = new MethodBlock.Builder("entry").special(true).build();
   private MethodBlock exitBlock = new MethodBlock.Builder("exit").special(true).build();
@@ -33,12 +34,19 @@ public class MethodGraph {
 
   public void addMethodBlock(MethodBlock methodBlock) {
     this.blocks.put(methodBlock.getID(), methodBlock);
+    this.exceptionalEdges.putIfAbsent(methodBlock, new HashSet<>());
   }
 
   public void addEdge(MethodBlock from, MethodBlock to) {
     from.addSuccessor(to);
     to.addPredecessor(from);
   }
+
+  public void addExceptionalEdge(MethodBlock from, MethodBlock to) {
+    this.addEdge(from, to);
+    this.exceptionalEdges.get(from).add(to);
+  }
+
   // TODO expensive
   private void calculateDominators() {
     for (MethodBlock block : this.blocks.values()) {
@@ -301,8 +309,6 @@ public class MethodGraph {
     return this.blocks.get(ID);
   }
 
-  // TODO added this annotation and need to make sure (1) it is correct to add it and (2) callers
-  // handle null
   @Nullable
   public MethodBlock getMethodBlock(AbstractInsnNode insnNode) {
     return this.getMethodBlock(MethodBlock.asID(insnNode));
@@ -314,6 +320,10 @@ public class MethodGraph {
 
   public int getBlockCount() {
     return this.blocks.size();
+  }
+
+  public Map<MethodBlock, Set<MethodBlock>> getExceptionalEdges() {
+    return exceptionalEdges;
   }
 
   // TODO how to do this?

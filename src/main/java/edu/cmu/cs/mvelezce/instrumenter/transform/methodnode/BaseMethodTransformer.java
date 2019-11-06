@@ -92,8 +92,9 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
       }
 
       Printer printer = tracer.getPrinterForMethodSignature(methodNode.name + methodNode.desc);
-      PrettyMethodGraphBuilder prettyBuilder = new PrettyMethodGraphBuilder(methodNode, printer);
-      PrettyMethodGraph prettyGraph = prettyBuilder.build(methodNode);
+      PrettyMethodGraphBuilder prettyBuilder =
+          new PrettyMethodGraphBuilder(classNode, methodNode, printer);
+      PrettyMethodGraph prettyGraph = prettyBuilder.build();
 
       String doString = prettyGraph.toDotStringVerbose(methodNode.name);
 

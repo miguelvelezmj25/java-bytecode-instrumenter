@@ -13,31 +13,30 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
 
   // TODO add a new label in a basic block to determine the beginning and end of a control flow
   // decision
-  private final String owner;
   private final Map<CFGNode<BasicValue>, Integer> nodesToIndexes = new HashMap<>();
   private Analyzer<BasicValue> analyzer;
 
-  public CFGBuilder(String owner) {
-    this.owner = owner;
+  public CFGBuilder(ClassNode classNode, MethodNode methodNode) {
+    super(classNode, methodNode);
   }
 
   public static MethodGraph getCfg(MethodNode methodNode, ClassNode classNode) {
-    MethodGraphBuilder cfgBuilder = new CFGBuilder(classNode.name);
-    return cfgBuilder.build(methodNode);
+    MethodGraphBuilder cfgBuilder = new CFGBuilder(classNode, methodNode);
+    return cfgBuilder.build();
   }
 
   @Override
-  public MethodGraph build(MethodNode methodNode) {
-    Analyzer<BasicValue> analyzer = this.getASMAnalyzer(methodNode);
+  public MethodGraph build() {
+    Analyzer<BasicValue> analyzer = this.getASMAnalyzer();
     Frame<BasicValue>[] frames = analyzer.getFrames();
     this.cacheNodesToIndex(frames);
 
-    return super.build(methodNode);
+    return super.build();
   }
 
   @Override
-  public void addBlocks(MethodGraph graph, MethodNode methodNode) {
-    InsnList insnList = methodNode.instructions;
+  public void addBlocks(MethodGraph graph) {
+    InsnList insnList = this.getMethodNode().instructions;
     MethodBlock initialBlock = new MethodBlock.Builder(insnList.getFirst()).build();
     graph.addMethodBlock(initialBlock);
 
@@ -52,33 +51,27 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
 
       CFGNode<BasicValue> cfgNode = (CFGNode<BasicValue>) frame;
       AbstractInsnNode insn = insnList.get(i);
+
       this.AddPredsBlocks(graph, cfgNode, insn);
       this.addSuccsBlocks(graph, cfgNode, insnList, insn);
+      this.addExceptionalBlocks(graph);
     }
+  }
 
-    //    for(TryCatchBlockNode tryCatchBlockNode : methodNode.tryCatchBlocks) {
-    //      LabelNode start = tryCatchBlockNode.start;
-    //      MethodBlock startMethodBlock = graph.getMethodBlock(start);
-    //
-    //      if(startMethodBlock == null) {
-    //        throw new RuntimeException("The start of a try block should be a method block");
-    //      }
-    //
-    //      LabelNode handler = tryCatchBlockNode.handler;
-    //      MethodBlock handlerMethodBlock = graph.getMethodBlock(handler);
-    //
-    //      if(handlerMethodBlock == null) {
-    //        throw new RuntimeException("The start of a catch block should be a method block");
-    //      }
-    //
-    //      LabelNode end = tryCatchBlockNode.end;
-    //      MethodBlock endMethodBlock = graph.getMethodBlock(end);
-    //
-    //      if(endMethodBlock == null) {
-    //        endMethodBlock = new MethodBlock(end);
-    //        graph.addMethodBlock(endMethodBlock);
-    //      }
-    //    }
+  private void addExceptionalBlocks(MethodGraph graph) {
+    for (TryCatchBlockNode tryCatchBlockNode : this.getMethodNode().tryCatchBlocks) {
+      LabelNode start = tryCatchBlockNode.start;
+      MethodBlock startBlock = new MethodBlock.Builder(start).build();
+      graph.addMethodBlock(startBlock);
+
+      LabelNode end = tryCatchBlockNode.end;
+      MethodBlock endBlock = new MethodBlock.Builder(end).build();
+      graph.addMethodBlock(endBlock);
+
+      LabelNode handler = tryCatchBlockNode.handler;
+      MethodBlock handlerBlock = new MethodBlock.Builder(handler).build();
+      graph.addMethodBlock(handlerBlock);
+    }
   }
 
   private void AddPredsBlocks(
@@ -115,13 +108,6 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
       return;
     }
 
-    if (!(insn instanceof JumpInsnNode
-        || insn instanceof TableSwitchInsnNode
-        || insn instanceof LookupSwitchInsnNode)) {
-      throw new RuntimeException(
-          "There is a node with multiple successors, but it is not a jump instruction");
-    }
-
     for (CFGNode<BasicValue> succ : succs) {
       int succIndex = this.nodesToIndexes.get(succ);
       AbstractInsnNode succInsn = insnList.get(succIndex);
@@ -129,19 +115,18 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
       graph.addMethodBlock(succBlock);
     }
 
-    // For non-conditional jumps, the next instruction should be in a separate node
     AbstractInsnNode nextInsn = insn.getNext();
     MethodBlock block = new MethodBlock.Builder(nextInsn).build();
     graph.addMethodBlock(block);
   }
 
   @Override
-  public void addEdges(MethodGraph graph, MethodNode methodNode) {
+  public void addEdges(MethodGraph graph) {
     Frame<BasicValue>[] frames = this.analyzer.getFrames();
-    InsnList insnList = methodNode.instructions;
+    InsnList insnList = this.getMethodNode().instructions;
 
     for (MethodBlock block : graph.getBlocks()) {
-      if (block.isSpecial() || block.isHandlerBlock()) {
+      if (block.isSpecial()) {
         continue;
       }
 
@@ -161,23 +146,66 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
         AbstractInsnNode succInsn = insnList.get(succIndex);
         MethodBlock succBlock = graph.getMethodBlock(succInsn);
 
+        if (succBlock == null) {
+          throw new RuntimeException("The successor block is null");
+        }
+
         if (succBlock.isHandlerBlock()) {
-          continue;
+          throw new RuntimeException("Did not expect the successor node to be a handler block");
         }
 
         graph.addEdge(block, succBlock);
       }
     }
+
+    this.addExceptionalEdges(graph);
+  }
+
+  private void addExceptionalEdges(MethodGraph graph) {
+    for (TryCatchBlockNode tryCatchBlockNode : this.getMethodNode().tryCatchBlocks) {
+      AbstractInsnNode handler = tryCatchBlockNode.handler;
+      MethodBlock handlerBlock = graph.getMethodBlock(handler);
+
+      if (handlerBlock == null) {
+        throw new RuntimeException("Did not expect the block to be null");
+      }
+
+      if (handlerBlock.getPredecessors().isEmpty()) {
+        handlerBlock.setCatchWithImplicitThrow(true);
+      }
+
+      LabelNode start = tryCatchBlockNode.start;
+      MethodBlock methodBlock = graph.getMethodBlock(start);
+
+      if (methodBlock == null) {
+        throw new RuntimeException("Did not expect the block to be null");
+      }
+
+      graph.addExceptionalEdge(methodBlock, handlerBlock);
+
+      // Add edge from all blocks within start and end (exclusive) to the handler
+      AbstractInsnNode insnNode = start.getNext();
+
+      while (!tryCatchBlockNode.end.equals(insnNode)) {
+        methodBlock = graph.getMethodBlock(insnNode);
+
+        if (methodBlock != null) {
+          graph.addExceptionalEdge(methodBlock, handlerBlock);
+        }
+
+        insnNode = insnNode.getNext();
+      }
+    }
   }
 
   @Override
-  public void addInstructions(MethodGraph graph, MethodNode methodNode) {
+  public void addInstructions(MethodGraph graph) {
     List<AbstractInsnNode> curInsnList = null;
-    Iterator<AbstractInsnNode> insnIter = methodNode.instructions.iterator();
+    Iterator<AbstractInsnNode> insnIter = this.getMethodNode().instructions.iterator();
 
     Set<AbstractInsnNode> handlerInstructions = new HashSet<>();
 
-    for (TryCatchBlockNode tryCatchBlockNode : methodNode.tryCatchBlocks) {
+    for (TryCatchBlockNode tryCatchBlockNode : this.getMethodNode().tryCatchBlocks) {
       handlerInstructions.add(tryCatchBlockNode.handler);
     }
 
@@ -202,18 +230,20 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
     }
   }
 
-  private Analyzer<BasicValue> getASMAnalyzer(MethodNode methodNode) {
+  private Analyzer<BasicValue> getASMAnalyzer() {
     if (this.analyzer != null) {
       return this.analyzer;
     }
 
-    this.analyzer = new BuildCFGAnalyzer(methodNode);
+    this.analyzer = new BuildCFGAnalyzer(this.getMethodNode());
 
     try {
-      this.analyzer.analyze(this.owner, methodNode);
+      this.analyzer.analyze(this.getMethodNode().name, this.getMethodNode());
     } catch (AnalyzerException ae) {
       throw new RuntimeException(
-          "Could not build a control flow graph for method " + methodNode.name + methodNode.desc,
+          "Could not build a control flow graph for method "
+              + this.getMethodNode().name
+              + this.getMethodNode().desc,
           ae);
     }
 
@@ -264,16 +294,19 @@ public class CFGBuilder extends BaseMethodGraphBuilder {
       dstNode.getPredecessors().add(srcNode);
     }
 
-    protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
-      //      return true;
-      return false;
-    }
-
-    protected boolean newControlFlowExceptionEdge(int insnIndex, TryCatchBlockNode tryCatchBlock) {
-      return false;
-      //      int handlerIndex = this.instructions.indexOf(tryCatchBlock.handler);
-      //
-      //      return this.newControlFlowExceptionEdge(insnIndex, handlerIndex);
-    }
+    //    protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
+    //      return super.newControlFlowExceptionEdge(insnIndex, successorIndex);
+    //      //      return false;
+    //    }
+    //
+    //    protected boolean newControlFlowExceptionEdge(int insnIndex, TryCatchBlockNode
+    // tryCatchBlock) {
+    //      return super.newControlFlowExceptionEdge(insnIndex, tryCatchBlock);
+    //      //      return false;
+    //
+    //      //            int handlerIndex = this.instructions.indexOf(tryCatchBlock.handler);
+    //      //
+    //      //            return this.newControlFlowExceptionEdge(insnIndex, handlerIndex);
+    //    }
   }
 }
