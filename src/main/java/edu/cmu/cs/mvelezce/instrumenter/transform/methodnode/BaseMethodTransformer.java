@@ -96,23 +96,23 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
           new PrettyMethodGraphBuilder(classNode, methodNode, printer);
       PrettyMethodGraph prettyGraph = prettyBuilder.build();
 
-      String doString = prettyGraph.toDotStringVerbose(methodNode.name);
+      String doString = prettyGraph.toDotStringVerbose(methodNode.name + methodNode.desc);
 
       PrettyMethodGraph.saveDotFile(
           doString,
           this.getDebugDir(),
           this.getProgramName(),
           classNode.name,
-          methodNode.name,
-          methodNode.name);
+          methodNode.name + methodNode.desc,
+          methodNode.name + methodNode.desc);
 
       try {
         PrettyMethodGraph.savePdfFile(
             this.getDebugDir(),
             this.getProgramName(),
             classNode.name,
-            methodNode.name,
-            methodNode.name);
+            methodNode.name + methodNode.desc,
+            methodNode.name + methodNode.desc);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
