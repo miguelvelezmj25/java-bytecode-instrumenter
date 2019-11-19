@@ -21,7 +21,7 @@ public class PrettyMethodGraph extends MethodGraph {
       String programName,
       String className,
       String methodName,
-      String finalFileName)
+      String transformation)
       throws FileNotFoundException {
     String dotFileName =
         dir
@@ -30,9 +30,11 @@ public class PrettyMethodGraph extends MethodGraph {
             + "/"
             + className
             + "/"
-            + methodName
+            + removeSpecialChars(methodName)
             + "/"
-            + finalFileName
+            + transformation
+            + "/"
+            + removeSpecialChars(methodName)
             + PrettyMethodGraph.DOT_DOT;
 
     File file = new File(dotFileName);
@@ -44,11 +46,25 @@ public class PrettyMethodGraph extends MethodGraph {
     writer.close();
   }
 
+  private static String removeSpecialChars(String string) {
+    return string.replaceAll("/", ":");
+  }
+
   public static void savePdfFile(
-      String dir, String programName, String className, String methodName, String finalFileName)
+      String dir, String programName, String className, String methodName, String transformation)
       throws IOException, InterruptedException {
     String fileNamePrefix =
-        dir + "/" + programName + "/" + className + "/" + methodName + "/" + finalFileName;
+        dir
+            + "/"
+            + programName
+            + "/"
+            + className
+            + "/"
+            + removeSpecialChars(methodName)
+            + "/"
+            + transformation
+            + "/"
+            + removeSpecialChars(methodName);
     String dotFileName = fileNamePrefix + PrettyMethodGraph.DOT_DOT;
     String pdfFileName = fileNamePrefix + PrettyMethodGraph.DOT_PDF;
 

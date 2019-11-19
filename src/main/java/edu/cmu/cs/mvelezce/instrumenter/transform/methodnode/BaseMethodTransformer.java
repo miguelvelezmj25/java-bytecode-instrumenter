@@ -104,7 +104,7 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
           this.getProgramName(),
           classNode.name,
           methodNode.name + methodNode.desc,
-          methodNode.name + methodNode.desc);
+          "transform");
 
       try {
         PrettyMethodGraph.savePdfFile(
@@ -112,7 +112,7 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
             this.getProgramName(),
             classNode.name,
             methodNode.name + methodNode.desc,
-            methodNode.name + methodNode.desc);
+            "transform");
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
