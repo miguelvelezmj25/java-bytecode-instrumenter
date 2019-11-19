@@ -103,7 +103,8 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
           this.getDebugDir(),
           this.getProgramName(),
           classNode.name,
-          methodNode.name + methodNode.desc,
+          methodNode.name,
+          methodNode.desc,
           "transform");
 
       try {
@@ -111,7 +112,8 @@ public abstract class BaseMethodTransformer implements MethodTransformer {
             this.getDebugDir(),
             this.getProgramName(),
             classNode.name,
-            methodNode.name + methodNode.desc,
+            methodNode.name,
+            methodNode.desc,
             "transform");
       } catch (InterruptedException e) {
         e.printStackTrace();

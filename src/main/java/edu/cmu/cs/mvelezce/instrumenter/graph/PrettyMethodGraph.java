@@ -21,8 +21,11 @@ public class PrettyMethodGraph extends MethodGraph {
       String programName,
       String className,
       String methodName,
+      String methodDesc,
       String transformation)
       throws FileNotFoundException {
+    methodDesc = processMethodDesc(methodDesc);
+
     String dotFileName =
         dir
             + "/"
@@ -30,11 +33,13 @@ public class PrettyMethodGraph extends MethodGraph {
             + "/"
             + className
             + "/"
-            + removeSpecialChars(methodName)
+            + methodName
+            + removeSpecialChars(methodDesc)
             + "/"
             + transformation
             + "/"
-            + removeSpecialChars(methodName)
+            + methodName
+            + removeSpecialChars(methodDesc)
             + PrettyMethodGraph.DOT_DOT;
 
     File file = new File(dotFileName);
@@ -46,13 +51,28 @@ public class PrettyMethodGraph extends MethodGraph {
     writer.close();
   }
 
+  private static String processMethodDesc(String methodDesc) {
+    if (methodDesc.length() > 250) {
+      return String.valueOf(methodDesc.hashCode());
+    }
+
+    return methodDesc;
+  }
+
   private static String removeSpecialChars(String string) {
     return string.replaceAll("/", ":");
   }
 
   public static void savePdfFile(
-      String dir, String programName, String className, String methodName, String transformation)
+      String dir,
+      String programName,
+      String className,
+      String methodName,
+      String methodDesc,
+      String transformation)
       throws IOException, InterruptedException {
+    methodDesc = processMethodDesc(methodDesc);
+
     String fileNamePrefix =
         dir
             + "/"
@@ -60,11 +80,13 @@ public class PrettyMethodGraph extends MethodGraph {
             + "/"
             + className
             + "/"
-            + removeSpecialChars(methodName)
+            + methodName
+            + removeSpecialChars(methodDesc)
             + "/"
             + transformation
             + "/"
-            + removeSpecialChars(methodName);
+            + methodName
+            + removeSpecialChars(methodDesc);
     String dotFileName = fileNamePrefix + PrettyMethodGraph.DOT_DOT;
     String pdfFileName = fileNamePrefix + PrettyMethodGraph.DOT_PDF;
 
