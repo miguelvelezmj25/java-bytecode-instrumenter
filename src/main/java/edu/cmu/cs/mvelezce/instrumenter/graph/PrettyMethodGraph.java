@@ -52,7 +52,7 @@ public class PrettyMethodGraph extends MethodGraph {
   }
 
   private static String processMethodDesc(String methodDesc) {
-    if (methodDesc.length() > 250) {
+    if (methodDesc.length() > 100) {
       return String.valueOf(methodDesc.hashCode());
     }
 
