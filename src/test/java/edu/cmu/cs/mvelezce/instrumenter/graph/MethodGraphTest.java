@@ -1,6 +1,6 @@
 package edu.cmu.cs.mvelezce.instrumenter.graph;
 
-import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
+import edu.cmu.cs.mvelezce.adapters.trivial.BaseTrivialAdapter;
 import edu.cmu.cs.mvelezce.instrumenter.graph.block.MethodBlock;
 import edu.cmu.cs.mvelezce.instrumenter.graph.builder.cfg.CFGBuilder;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Set;
 
 public class MethodGraphTest {
 

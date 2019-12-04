@@ -1,12 +1,12 @@
 package edu.cmu.cs.mvelezce.instrumenter.graph.builder.cfg;
 
-import edu.cmu.cs.mvelezce.adapter.adapters.indexFiles.BaseIndexFilesAdapter;
-import edu.cmu.cs.mvelezce.adapter.adapters.measureDiskOrderedScan.BaseMeasureDiskOrderedScanAdapter;
-import edu.cmu.cs.mvelezce.adapter.adapters.pngtastic.BasePngtasticAdapter;
-import edu.cmu.cs.mvelezce.adapter.adapters.trivial.BaseTrivialAdapter;
-import edu.cmu.cs.mvelezce.adapter.adapters.tryCatchFinally.BaseTryCatchFinallyAdapter;
-import edu.cmu.cs.mvelezce.adapter.adapters.tryReturnCatch.BaseTryReturnCatchAdapter;
-import edu.cmu.cs.mvelezce.adapter.adapters.whileTrueNoReturn.BaseWhileTrueNoReturnAdapter;
+import edu.cmu.cs.mvelezce.adapters.indexFiles.BaseIndexFilesAdapter;
+import edu.cmu.cs.mvelezce.adapters.measureDiskOrderedScan.BaseMeasureDiskOrderedScanAdapter;
+import edu.cmu.cs.mvelezce.adapters.pngtastic.BasePngtasticAdapter;
+import edu.cmu.cs.mvelezce.adapters.trivial.BaseTrivialAdapter;
+import edu.cmu.cs.mvelezce.adapters.tryCatchFinally.BaseTryCatchFinallyAdapter;
+import edu.cmu.cs.mvelezce.adapters.tryReturnCatch.BaseTryReturnCatchAdapter;
+import edu.cmu.cs.mvelezce.adapters.whileTrueNoReturn.BaseWhileTrueNoReturnAdapter;
 import edu.cmu.cs.mvelezce.instrumenter.graph.MethodGraph;
 import edu.cmu.cs.mvelezce.instrumenter.graph.TestUtils;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
